@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dronacharya Mock Test - Identity Mode</title>
+    
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/128/3135/3135715.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&display=swap" rel="stylesheet">
+   
+    <style>
+        :root {
+            --primary: #2563EB;
+            --success: #059669;
+            --danger: #DC2626;
+            --bg: #F0F2F5;
+        }
+
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; user-select: none; 
+            font-family: 'Noto Serif Bengali', serif; 
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+            color: #1F2937;
+            min-height: 100vh;
+        }
+
+        /* নাম ও নম্বর দেওয়ার স্ক্রিন */
+        #auth-overlay {
+            position: fixed; inset: 0; background: white; z-index: 5000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-align: center;
+        }
+
+        .login-card {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 350px;
+        }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #4b5563; }
+        
+        .input-field {
+            width: 100%; padding: 12px; border: 2px solid #e5e7eb;
+            border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s;
+        }
+        .input-field:focus { border-color: var(--primary); }
+
+        .btn-start {
+            width: 100%; padding: 14px; background: var(--primary);
+            color: white; border: none; border-radius: 10px;
+            font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        /* কুইজ এরিয়া */
+        #timer-bar {
+            position: fixed; top: 0; width: 100%;
+            background: #ffffff; color: #DC2626;
+            text-align: center; padding: 10px;
+            font-size: 20px; font-weight: bold;
+            z-index: 1000; border-bottom: 3px solid #FDE68A;
+        }
+
+        .header {
+            margin-top: 55px; background: var(--primary); color: white;
+            padding: 25px 15px; text-align: center;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+
+        .header img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid white; }
+        .header h3 {
+            font-size: 18px; background: rgba(255, 255, 255, 0.2);
+            padding: 6px 18px; border-radius: 50px;
+        }
+
+        .container { width: 95%; max-width: 650px; margin: 0 auto; padding-bottom: 100px; }
+
+        .question-card {
+            background: white; border-radius: 15px; padding: 20px;
+            margin-bottom: 15px; border-left: 6px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .option {
+            background: #F9FAFB; border: 1.5px solid #E5E7EB;
+            border-radius: 10px; padding: 12px; margin: 8px 0;
+            cursor: pointer; transition: 0.2s;
+        }
+        .option:hover { background: #DBEAFE; transform: translateX(5px); }
+        .option.correct { background: var(--success) !important; color: white !important; border-color: var(--success); }
+        .option.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger); }
+
+        #submit-btn {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 350px; padding: 16px;
+            background: #111827; color: white; border: none;
+            border-radius: 50px; font-size: 18px; font-weight: bold;
+            display: none; z-index: 100; cursor: pointer;
+        }
+
+        /* রেজাল্ট ওভারলে ঠিক করা হয়েছে */
+        #result-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95);
+            display: none; align-items: center; justify-content: center; z-index: 6000;
+            backdrop-filter: blur(8px);
+        }
+
+        .result-box {
+            background: white; padding: 35px 25px; border-radius: 25px;
+            text-align: center; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .score-text { font-size: 50px; color: var(--primary); font-weight: 800; margin: 15px 0; }
+        
+        #feedback-msg { font-size: 17px; font-weight: bold; color: #475569; margin-bottom: 20px; line-height: 1.4; }
+
+        .result-btn {
+            background: var(--primary); color: white; border: none; 
+            padding: 12px 20px; border-radius: 12px; margin: 5px; 
+            cursor: pointer; font-size: 16px; font-weight: 700; transition: 0.3s;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+<div id="auth-overlay">
+    <div class="login-card">
+        <img src="https://cdn-icons-png.flaticon.com/128/3135/3135715.png" width="60">
+        <h2 style="margin: 15px 0;">পরীক্ষার্থীর তথ্য</h2>
+        <div class="input-group">
+            <label>আপনার নাম:</label>
+            <input type="text" id="user-name" class="input-field" placeholder="নাম লিখুন...">
+        </div>
+        <div class="input-group">
+            <label>মোবাইল নম্বর:</label>
+            <input type="tel" id="user-phone" class="input-field" placeholder="97XXXXXXXX" maxlength="10">
+        </div>
+        <button class="btn-start" onclick="startQuiz()">পরীক্ষা শুরু করুন</button>
+    </div>
+</div>
+
+<div id="timer-bar">সময় বাকি: 30:00</div>
+
+<header class="header">
+    <img src="https://drive.google.com/thumbnail?id=1fCf01Mr_bRA10Npc1TGWfEYxD0JX9Nh0&sz=w800" alt="Logo">
+    <h1>দ্রোণাচার্য ডিফেন্স্ একাডেমী</h1>
+    <h3>সিন্ধু সভ্যতা</h3>
+</header>
+
+<div class="container" id="quiz-container"></div>
+
+<button id="submit-btn" onclick="showResults()">পরীক্ষা জমা দিন</button>
+
+<div id="result-overlay">
+    <div class="result-box">
+        <h2 style="color: #1e293b;">আপনার রেজাল্ট কার্ড</h2>
+        <div class="score-text" id="final-score">0 / 0</div>
+        <p id="feedback-msg"></p>
+        <hr style="margin-bottom: 20px; opacity: 0.1;">
+        <button class="result-btn" onclick="location.reload()">আবার পরীক্ষা দিন</button>
+        <button class="result-btn" style="background:#64748b;" onclick="closeResult()">উত্তরগুলো দেখুন</button>
+    </div>
+</div>
+
+<script>
+    //প্রয়োজনে এটি পরিবর্তন করুন
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwroLVIn8zkcm0PqR3XBXvRV2ZmCxLO7YHHtUpyAAHZ1EWKG_WSCqmR0EClLqLUqLtnSg/exec";
+    const GID = "1083138154"; //প্রয়োজনে এটি পরিবর্তন করুন
+    
+    let userName = "", userPhone = "";
+    let score = 0, totalQuestions = 0, timeLeft = 1800, timerInterval;
+
+    function startQuiz() {
+        userName = document.getElementById('user-name').value;
+        userPhone = document.getElementById('user-phone').value;
+
+        if(userName.trim().length < 2 || userPhone.trim().length < 10) {
+            alert("দয়া করে সঠিক নাম এবং মোবাইল নম্বর দিন!");
+            return;
+        }
+
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'block';
+        loadQuestions();
+    }
+
+    async function loadQuestions() {
+        const container = document.getElementById('quiz-container');
+        container.innerHTML = "<p style='text-align:center; padding: 20px;'>প্রশ্ন লোড হচ্ছে, দয়া করে অপেক্ষা করুন...</p>";
+        
+        // Header H3 থেকে বর্তমান পরীক্ষার নাম নেওয়া (যেমন: সিন্ধু সভ্যতা)
+        const currentTestName = document.querySelector('.header h3').textContent.trim();
+        
+        try {
+            const response = await fetch(`${scriptURL}?gid=${GID}`);
+            const data = await response.text();
+            
+            // CSV ডাটা রো হিসেবে ভাগ করা
+            const rows = data.trim().split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+            
+            // ফিল্টারিং: A কলাম (row[0]) যদি currentTestName এর সাথে মিলে যায়
+            const quizRows = rows.filter(row => {
+                return row[0] && row[0].trim().replace(/"/g, "") === currentTestName;
+            });
+
+            if (quizRows.length === 0) {
+                container.innerHTML = `<p style='text-align:center; color:red; padding:20px;'>দুঃখিত, "${currentTestName}" এর কোনো প্রশ্ন পাওয়া যায়নি।</p>`;
+                return;
+            }
+
+            totalQuestions = quizRows.length;
+            container.innerHTML = "";
+
+            quizRows.forEach((row, index) => {
+                // row[2] হলো প্রশ্ন (C কলাম)
+                if(!row[2]) return;
+                
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                
+                const qText = row[2].replace(/"/g, "");
+                // বিকল্পগুলো: D, E, F, G কলাম
+                const opts = [row[3], row[4], row[5], row[6]].map(o => o ? o.replace(/"/g, "") : "");
+                const correct = row[7] ? row[7].trim().replace(/"/g, "") : "";
+
+                card.innerHTML = `<p style="font-size:18px; font-weight:bold; margin-bottom:10px;">${index + 1}. ${qText}</p>`;
+
+                opts.forEach(opt => {
+                    const div = document.createElement('div');
+                    div.className = 'option';
+                    div.textContent = opt;
+                    div.onclick = function() {
+                        const all = card.querySelectorAll('.option');
+                        all.forEach(o => {
+                            o.style.pointerEvents = 'none';
+                            o.style.opacity = '0.7';
+                        });
+                        this.style.opacity = '1';
+                        if(this.textContent.trim() === correct) {
+                            this.classList.add('correct'); score++;
+                        } else {
+                            this.classList.add('wrong');
+                            all.forEach(o => { if(o.textContent.trim() === correct) o.classList.add('correct'); });
+                        }
+                    };
+                    card.appendChild(div);
+                });
+                container.appendChild(card);
+            });
+            startTimer();
+        } catch(e) { 
+            console.error(e);
+            container.innerHTML = "ডাটা লোড করতে সমস্যা হয়েছে।"; 
+        }
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            let m = Math.floor(timeLeft/60), s = timeLeft%60;
+            document.getElementById('timer-bar').textContent = `সময় বাকি: ${m}:${s<10?'0':''}${s}`;
+            if(timeLeft-- <= 0) showResults();
+        }, 1000);
+    }
+
+    
+
+    function showResults() {
+        clearInterval(timerInterval);
+        document.getElementById('result-overlay').style.display = 'flex';
+        document.getElementById('final-score').textContent = `${score} / ${totalQuestions}`;
+        
+        // Header H3 থেকে টেস্টের নাম নেওয়া (যেমন: মক টেস্ট - ২০)
+        const testTitle = document.querySelector('.header h3').textContent;
+
+        let msg = "";
+        let percentage = (score / totalQuestions) * 100;
+
+        if (percentage >= 80) msg = "অসাধারণ! 🌟 প্রস্তুতি চমৎকার।";
+        else if (percentage >= 60) msg = "ভালো হয়েছে! 👍 আরও উন্নতি সম্ভব।";
+        else if (percentage >= 40) msg = "গড়পড়তা রেজাল্ট। 📚 আরও পড়ুন।";
+        else msg = "খুবই দুর্বল ফলাফল। ⚠️ আজই কঠোর পরিশ্রম শুরু করুন!";
+        
+        document.getElementById('feedback-msg').textContent = msg;
+
+        // নতুন অবজেক্ট যেখানে testName যোগ করা হয়েছে
+        const payload = {
+            name: userName,
+            phone: userPhone,
+            testName: testTitle, // এই ডাটাটি এখন শিটে যাবে
+            score: score,
+            total: totalQuestions
+        };
+
+        fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors', // CORS ইস্যু এড়াতে no-cors ব্যবহার করা হয়েছে
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        }).catch(err => console.log('Sending error:', err));
+    }
+
+
+
+    function closeResult() {
+        document.getElementById('result-overlay').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'none';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+</script>
+
+</body>
+</html>
